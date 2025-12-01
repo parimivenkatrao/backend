@@ -1,4 +1,3 @@
-// server.js
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
@@ -6,12 +5,12 @@ const connectDB = require("./config/db");
 
 dotenv.config();
 
+const app = express();
+const PORT = process.env.PORT || 5000;
+
 // Connect to MongoDB
 connectDB();
 
-const app = express();
-
-// CORS - allow Vite frontend
 // CORS - allow origins from env or default to Vite localhost
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || "http://localhost:5173").split(",").map(s => s.trim()).filter(Boolean);
 app.use(
@@ -48,7 +47,18 @@ app.get("/api", (req, res) => {
   });
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`✅ Server running on http://localhost:${PORT}`);
+});
+
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`⚠️ Port ${PORT} is already in use. Choose a different PORT or stop the process using it.`);
+    console.error('On Windows: run `netstat -ano | findstr :' + PORT + '` to find the PID, then `taskkill /PID <pid> /F`.');
+    console.error('Or run this one-liner to start on the next port instead:');
+    console.error('  PowerShell: $env:PORT=((' + PORT + ')+1); node .\\server.js');
+    process.exit(1);
+  }
+  console.error('Server error:', err);
+  process.exit(1);
 });
